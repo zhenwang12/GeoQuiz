@@ -1,26 +1,34 @@
 package com.example.myapplication;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import static com.example.myapplication.CheatActivity.EXTRA_ANSWER_SHOWN;
+
 public class QuizActivity extends AppCompatActivity {
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final String EXTRA_ANSWER_IS_TRUE = "ANSWER_IS_TRUE";
+    private static final int CHEAT_REQ_CODE = 0;
 
     private Button mTrueButton;
     private Button mFalseButton;
     private Button mNextButton;
     private Button mPrevButton;
+    private Button mCheatButton;
     private TextView mQuestionTextView;
     private int correctNumber = 0;
+    private boolean isCheater;
 
     private Question[] mQuestionBank = new Question[] {
         new Question(R.string.question_australia, true),
@@ -52,8 +60,16 @@ public class QuizActivity extends AppCompatActivity {
         mFalseButton = (Button) findViewById(R.id.false_button);
         mNextButton = (Button) findViewById(R.id.next_button);
         mPrevButton = (Button) findViewById(R.id.prev_button);
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
 
         updateQuestion();
+
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(newIntent(QuizActivity.this, mQuestionBank[mCurrentIndex].isAnswerTrue()), CHEAT_REQ_CODE);
+            }
+        });
 
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -89,6 +105,7 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                isCheater = false;
                 updateQuestion();
             }
         });
@@ -113,36 +130,6 @@ public class QuizActivity extends AppCompatActivity {
         outState.putInt(KEY_INDEX, mCurrentIndex);
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.d(TAG, "this is onStart()");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d(TAG, "this is onResume()");
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d(TAG, "this is onPause()");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Log.d(TAG, "this is onStop()");
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "this is onDestroy()");
-    }
-
     private void updateQuestion() {
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
@@ -152,11 +139,16 @@ public class QuizActivity extends AppCompatActivity {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
 
         int messageResId = 0;
-        if (userPressedTrue == answerIsTrue) {
-            messageResId = R.string.correct_toast;
-            correctNumber++;
+
+        if (isCheater) {
+            messageResId = R.string.judgment_toast;
         } else {
-            messageResId = R.string.incorrect_toast;
+            if (userPressedTrue == answerIsTrue) {
+                messageResId = R.string.correct_toast;
+                correctNumber++;
+            } else {
+                messageResId = R.string.incorrect_toast;
+            }
         }
 
         Toast.makeText(QuizActivity.this, messageResId, Toast.LENGTH_SHORT).show();
@@ -168,5 +160,26 @@ public class QuizActivity extends AppCompatActivity {
 
     private void checkCorrectness() {
         Toast.makeText(QuizActivity.this, correctNumber * 1.0 / totalNumber + "", Toast.LENGTH_SHORT).show();
+    }
+
+    public static Intent newIntent(Context context, boolean isAnswerTrue) {
+        Intent intent = new Intent(context, CheatActivity.class);
+        intent.putExtra(EXTRA_ANSWER_IS_TRUE, isAnswerTrue);
+        return intent;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
+        if (requestCode == CHEAT_REQ_CODE) {
+            if (data == null) {
+                return;
+            }
+            isCheater = CheatActivity.wasAnswerShown(data);
+        }
     }
 }
