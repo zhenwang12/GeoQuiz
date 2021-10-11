@@ -1,7 +1,10 @@
 package com.example.myapplication;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.PersistableBundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -9,12 +12,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class QuizActivity extends AppCompatActivity {
+    private static final String TAG = "QuizActivity";
+    private static final String KEY_INDEX = "index";
 
     private Button mTrueButton;
     private Button mFalseButton;
     private Button mNextButton;
     private Button mPrevButton;
     private TextView mQuestionTextView;
+    private int correctNumber = 0;
 
     private Question[] mQuestionBank = new Question[] {
         new Question(R.string.question_australia, true),
@@ -25,6 +31,8 @@ public class QuizActivity extends AppCompatActivity {
         new Question(R.string.question_asia, true)
     };
 
+    private int totalNumber = mQuestionBank.length;
+
     private int mCurrentIndex = 0;
 
     private Toast mToast;
@@ -33,6 +41,11 @@ public class QuizActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.d(TAG, "this is onCreate()");
+
+        if (savedInstanceState != null) {
+            mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+        }
 
         mQuestionTextView = (TextView) findViewById(R.id.question_text);
         mTrueButton = (Button) findViewById(R.id.true_button);
@@ -94,6 +107,42 @@ public class QuizActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(KEY_INDEX, mCurrentIndex);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d(TAG, "this is onStart()");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "this is onResume()");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "this is onPause()");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "this is onStop()");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "this is onDestroy()");
+    }
+
     private void updateQuestion() {
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
@@ -105,10 +154,19 @@ public class QuizActivity extends AppCompatActivity {
         int messageResId = 0;
         if (userPressedTrue == answerIsTrue) {
             messageResId = R.string.correct_toast;
+            correctNumber++;
         } else {
             messageResId = R.string.incorrect_toast;
         }
 
         Toast.makeText(QuizActivity.this, messageResId, Toast.LENGTH_SHORT).show();
+
+        if (mCurrentIndex == mQuestionBank.length - 1) {
+            checkCorrectness();
+        }
+    }
+
+    private void checkCorrectness() {
+        Toast.makeText(QuizActivity.this, correctNumber * 1.0 / totalNumber + "", Toast.LENGTH_SHORT).show();
     }
 }
