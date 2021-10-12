@@ -27,8 +27,10 @@ public class QuizActivity extends AppCompatActivity {
     private Button mPrevButton;
     private Button mCheatButton;
     private TextView mQuestionTextView;
+    private TextView mCheatTimesTextView;
     private int correctNumber = 0;
     private boolean isCheater;
+    private int cheatCount = 3;
 
     private Question[] mQuestionBank = new Question[] {
         new Question(R.string.question_australia, true),
@@ -56,6 +58,7 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         mQuestionTextView = (TextView) findViewById(R.id.question_text);
+        mCheatTimesTextView = (TextView) findViewById(R.id.cheat_time_textview);
         mTrueButton = (Button) findViewById(R.id.true_button);
         mFalseButton = (Button) findViewById(R.id.false_button);
         mNextButton = (Button) findViewById(R.id.next_button);
@@ -133,6 +136,7 @@ public class QuizActivity extends AppCompatActivity {
     private void updateQuestion() {
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
+        updateCheatText();
     }
 
     private void checkAnswer(boolean userPressedTrue) {
@@ -180,6 +184,20 @@ public class QuizActivity extends AppCompatActivity {
                 return;
             }
             isCheater = CheatActivity.wasAnswerShown(data);
+            if (isCheater && cheatCount > 0) {
+                cheatCount--;
+                updateCheatText();
+            }
+        }
+    }
+
+    private void updateCheatText() {
+        String cheatText = String.format("%d times left", cheatCount);
+        mCheatTimesTextView.setText(cheatText);
+
+        if (cheatCount <= 0) {
+            mCheatButton.setClickable(false);
+            mCheatButton.setEnabled(false);
         }
     }
 }
